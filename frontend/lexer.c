@@ -52,20 +52,34 @@ typedef struct
 
 Token createToken(const char *value, TokenType type)
 {
-  char *valueCopy = malloc(strlen(value) + 1);
+
+  // test print printf("OG: %s", value);
+  bool isEmpty = true;
+
+  if (*value != '\0')
+  {
+    isEmpty = false;
+  }
+
+  size_t len = strlen(value);
+
+  char *valueCopy = malloc((len + 1) * sizeof(char));
   if (valueCopy == NULL)
   {
     printf("Memory allocation failed when creating token. Exiting...");
     exit(1);
   }
+
   strcpy(valueCopy, value);
+  // test print printf("Val: %s", valueCopy);
+
   Token ret = {valueCopy, type};
   return ret;
 }
 
 bool isSkippable(char c)
 {
-  if (c == '\n' || c == '\r' || c == '\t' || c == ' ' || c == '\0' || c == '\\')
+  if (c == '\n' || c == '\r' || c == '\t' || c == ' ' || c == '\0' || c == '\\' || c == 10)
   {
     return true;
   }
@@ -105,37 +119,43 @@ Token *tokenize(char *src)
 
     if (src[pos] == '(' && !insideStr)
     {
-      tokens[tokenPos] = createToken(&src[pos], OpenParen);
+      const char val[] = {src[pos], '\0'};
+      tokens[tokenPos] = createToken(val, OpenParen);
       pos++;
       tokenPos++;
     }
     else if (src[pos] == ')' && !insideStr)
     {
-      tokens[tokenPos] = createToken(&src[pos], ClosedParen);
+      const char val[] = {src[pos], '\0'};
+      tokens[tokenPos] = createToken(val, ClosedParen);
       pos++;
       tokenPos++;
     }
     else if (src[pos] == '{' && !insideStr)
     {
-      tokens[tokenPos] = createToken(&src[pos], OpenBrace);
+      const char val[] = {src[pos], '\0'};
+      tokens[tokenPos] = createToken(val, OpenBrace);
       pos++;
       tokenPos++;
     }
     else if (src[pos] == '}' && !insideStr)
     {
-      tokens[tokenPos] = createToken(&src[pos], ClosedBrace);
+      const char val[] = {src[pos], '\0'};
+      tokens[tokenPos] = createToken(val, ClosedBrace);
       pos++;
       tokenPos++;
     }
     else if (src[pos] == '[' && !insideStr)
     {
-      tokens[tokenPos] = createToken(&src[pos], OpenBracket);
+      const char val[] = {src[pos], '\0'};
+      tokens[tokenPos] = createToken(val, OpenBracket);
       pos++;
       tokenPos++;
     }
     else if (src[pos] == ']' && !insideStr)
     {
-      tokens[tokenPos] = createToken(&src[pos], ClosedBracket);
+      const char val[] = {src[pos], '\0'};
+      tokens[tokenPos] = createToken(val, ClosedBracket);
       pos++;
       tokenPos++;
     }
@@ -177,7 +197,8 @@ Token *tokenize(char *src)
     }
     else if (src[pos] == '.' && !insideStr)
     {
-      tokens[tokenPos] = createToken(&src[pos], Dot);
+      const char val[] = {src[pos], '\0'};
+      tokens[tokenPos] = createToken(val, Dot);
       pos++;
       tokenPos++;
     }
@@ -189,7 +210,8 @@ Token *tokenize(char *src)
          src[pos] == '%') &&
         !insideStr)
     {
-      tokens[tokenPos] = createToken(&src[pos], BinaryOperator);
+      const char val[] = {src[pos], '\0'};
+      tokens[tokenPos] = createToken(val, BinaryOperator);
       pos++;
       tokenPos++;
     }
@@ -223,45 +245,51 @@ Token *tokenize(char *src)
     }
     else if (src[pos] == '=' && !insideStr)
     {
-      const char val = src[pos];
-      tokens[tokenPos] = createToken(&val, Equals);
+      const char val[] = {src[pos], '\0'};
+      tokens[tokenPos] = createToken(val, Equals);
       pos++;
 
       tokenPos++;
     }
     else if (src[pos] == '>' && !insideStr)
     {
-      tokens[tokenPos] = createToken(&src[pos], Gr);
+      const char val[] = {src[pos], '\0'};
+      tokens[tokenPos] = createToken(val, Gr);
       pos++;
       tokenPos++;
     }
     else if (src[pos] == '<' && !insideStr)
     {
-      tokens[tokenPos] = createToken(&src[pos], Ls);
+      const char val[] = {src[pos], '\0'};
+      tokens[tokenPos] = createToken(val, Ls);
       pos++;
       tokenPos++;
     }
     else if (src[pos] == ';' && !insideStr)
     {
-      tokens[tokenPos] = createToken(&src[pos], Semicolon);
+      const char val[] = {src[pos], '\0'};
+      tokens[tokenPos] = createToken(val, Semicolon);
       pos++;
       tokenPos++;
     }
     else if (src[pos] == ':' && !insideStr)
     {
-      tokens[tokenPos] = createToken(&src[pos], Colon);
+      const char val[] = {src[pos], '\0'};
+      tokens[tokenPos] = createToken(val, Colon);
       pos++;
       tokenPos++;
     }
     else if (src[pos] == ',' && !insideStr)
     {
-      tokens[tokenPos] = createToken(&src[pos], Comma);
+      const char val[] = {src[pos], '\0'};
+      tokens[tokenPos] = createToken(val, Comma);
       pos++;
       tokenPos++;
     }
     else if (src[pos] == '\'')
     {
-      tokens[tokenPos] = createToken(&src[pos], SQuote);
+      const char val[] = {src[pos], '\0'};
+      tokens[tokenPos] = createToken(val, SQuote);
       pos++;
       tokenPos++;
       insideStr = !insideStr;
@@ -269,7 +297,8 @@ Token *tokenize(char *src)
     }
     else if (src[pos] == '\"')
     {
-      tokens[tokenPos] = createToken(&src[pos], DQuote);
+      const char val[] = {src[pos], '\0'};
+      tokens[tokenPos] = createToken(val, DQuote);
       pos++;
       tokenPos++;
       insideStr = !insideStr;
@@ -278,7 +307,7 @@ Token *tokenize(char *src)
     else if (isdigit(src[pos]) && !insideStr)
     {
       int buffsize = 64;
-      char *num = malloc(buffsize * sizeof(char));
+      char *num = malloc(buffsize + 1 * sizeof(char));
       if (num == NULL)
       {
         printf("Memory allocation failed when creating number. Exiting...");
@@ -294,7 +323,7 @@ Token *tokenize(char *src)
         if (loops >= buffsize)
         {
           buffsize *= 2;
-          num = realloc(num, buffsize * sizeof(Token));
+          num = realloc(num, buffsize + 1 * sizeof(Token));
           if (num == NULL)
           {
             printf("Memory reallocation failed when creating number. Exiting...");
@@ -302,6 +331,7 @@ Token *tokenize(char *src)
           }
         }
       }
+      num[loops] = '\0';
       tokens[tokenPos] = createToken(num, Number);
       tokenPos++;
     }
@@ -332,12 +362,13 @@ Token *tokenize(char *src)
         }
       }
 
+      ident[loops] = '\0';
       tokens[tokenPos] = createToken(ident, Identifier);
-      pos++;
       tokenPos++;
     }
     else if (isAlpha(src[pos]))
     {
+
       int buffsize = 64;
       char *ident = malloc(buffsize * sizeof(char));
       if (ident == NULL)
@@ -346,7 +377,7 @@ Token *tokenize(char *src)
         return NULL;
       }
       int loops = 0;
-      while (src[pos] != '\0' && isAlpha(src[pos]))
+      while (src[pos] != '\0' && src[pos] != '\n' && isAlpha(src[pos]))
       {
         ident[loops] = src[pos];
         pos++;
@@ -363,87 +394,75 @@ Token *tokenize(char *src)
         }
       }
 
+      ident[loops] = '\0';
+
       if (strcmp(ident, "var") == 0 || strcmp(ident, "Var") == 0)
       {
 
         tokens[tokenPos] = createToken(ident, Var);
-        pos++;
         tokenPos++;
       }
       else if (strcmp(ident, "if") == 0 || strcmp(ident, "If") == 0)
       {
         tokens[tokenPos] = createToken(ident, If);
-        pos++;
         tokenPos++;
       }
       else if (strcmp(ident, "const") == 0 || strcmp(ident, "Const") == 0)
       {
         tokens[tokenPos] = createToken(ident, Const);
-        pos++;
         tokenPos++;
       }
       else if (strcmp(ident, "return") == 0 || strcmp(ident, "Return") == 0)
       {
         tokens[tokenPos] = createToken(ident, Return);
-        pos++;
         tokenPos++;
       }
       else if (strcmp(ident, "funct") == 0 || strcmp(ident, "Funct") == 0)
       {
         tokens[tokenPos] = createToken(ident, Funct);
-        pos++;
         tokenPos++;
       }
       else if (strcmp(ident, "else") == 0 || strcmp(ident, "Else") == 0)
       {
         tokens[tokenPos] = createToken(ident, Else);
-        pos++;
         tokenPos++;
       }
       else if (strcmp(ident, "ifelse") == 0 || strcmp(ident, "Ifelse") == 0 || strcmp(ident, "IfElse") == 0 || strcmp(ident, "ifElse") == 0)
       {
         tokens[tokenPos] = createToken(ident, If);
-        pos++;
         tokenPos++;
         tokens[tokenPos] = createToken(ident, Else);
-        pos++;
         tokenPos++;
       }
       else if (strcmp(ident, "while") == 0 || strcmp(ident, "While") == 0)
       {
         tokens[tokenPos] = createToken(ident, While);
-        pos++;
         tokenPos++;
       }
       else if (strcmp(ident, "for") == 0 || strcmp(ident, "For") == 0)
       {
         tokens[tokenPos] = createToken(ident, For);
-        pos++;
         tokenPos++;
       }
       else if (strcmp(ident, "or") == 0 || strcmp(ident, "Or") == 0)
       {
         tokens[tokenPos] = createToken(ident, Or);
-        pos++;
         tokenPos++;
       }
       else if (strcmp(ident, "and") == 0 || strcmp(ident, "And") == 0)
       {
         tokens[tokenPos] = createToken(ident, And);
-        pos++;
         tokenPos++;
       }
       else if (strcmp(ident, "var") == 0 || strcmp(ident, "Var") == 0)
       {
         tokens[tokenPos] = createToken(ident, Var);
-        pos++;
         tokenPos++;
       }
       else
       {
 
         tokens[tokenPos] = createToken(ident, Identifier);
-        pos++;
         tokenPos++;
       }
     }

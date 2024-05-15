@@ -7,18 +7,16 @@ void run(char[]);
 
 int main()
 {
-  FILE *file = fopen("main.mawl", "r");
+  FILE *file = fopen("./main.mawl", "r");
   if (file == NULL)
   {
     printf("Failed to open main.mawl.\n");
     return 1;
   }
-
   fseek(file, 0, SEEK_END);
   long length = ftell(file);
-  fseek(file, 0, SEEK_SET);
-
-  char *input = malloc(length + 1);
+  rewind(file);
+  char *input = malloc(length * sizeof(char));
   if (input == NULL)
   {
     printf("Memory allocation failed.\n");
@@ -26,11 +24,10 @@ int main()
     return 1;
   }
 
-  fread(input, 1, length, file);
-  input[length] = '\0';
+  size_t readLen = fread(input, 1, length, file);
+  input[readLen] = '\0';
 
   fclose(file);
-
   Token *tokens = tokenize(input);
 
   if (tokens == NULL)

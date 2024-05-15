@@ -1,1 +1,16 @@
 var x = 0;
+if(x == 5){
+  const y = "String";
+}
+var variable = 'One quote strings, woah'
+funct add(a, b){
+  return a+ b;
+}
+add(5, 7);
+while(x < 10){
+  x++;
+}
+x--;
+for(var i = 0; i<11; i++){
+  print("Hello World");
+}
