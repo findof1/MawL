@@ -50,15 +50,22 @@ typedef struct
   TokenType type;
 } Token;
 
-Token createToken(char *value, TokenType type)
+Token createToken(const char *value, TokenType type)
 {
-  const Token ret = {value, type};
+  char *valueCopy = malloc(strlen(value) + 1);
+  if (valueCopy == NULL)
+  {
+    printf("Memory allocation failed when creating token. Exiting...");
+    exit(1);
+  }
+  strcpy(valueCopy, value);
+  Token ret = {valueCopy, type};
   return ret;
 }
 
 bool isSkippable(char c)
 {
-  if (c == '\n' || c == '\r' || c == '\t' || c == ' ' || c == '\0')
+  if (c == '\n' || c == '\r' || c == '\t' || c == ' ' || c == '\0' || c == '\\')
   {
     return true;
   }
@@ -67,6 +74,7 @@ bool isSkippable(char c)
 
 bool isAlpha(char c)
 {
+
   if (isupper(c) || islower(c))
   {
     return true;
@@ -92,8 +100,9 @@ Token *tokenize(char *src)
   int pos = 0;
   int tokenPos = 0;
 
-  while (src[pos] != EOF)
+  while (src[pos] != '\0')
   {
+
     if (src[pos] == '(' && !insideStr)
     {
       tokens[tokenPos] = createToken(&src[pos], OpenParen);
@@ -133,7 +142,7 @@ Token *tokenize(char *src)
     else if (src[pos] == '/' && src[pos + 1] == '/' && !insideStr)
     {
       pos += 2;
-      while (src[pos] != EOF && (src[pos] != '\n' && src[pos] != '\r'))
+      while (src[pos] != '\0' && (src[pos] != '\n' && src[pos] != '\r'))
       {
         pos++;
       }
@@ -214,8 +223,10 @@ Token *tokenize(char *src)
     }
     else if (src[pos] == '=' && !insideStr)
     {
-      tokens[tokenPos] = createToken(&src[pos], Equals);
+      const char val = src[pos];
+      tokens[tokenPos] = createToken(&val, Equals);
       pos++;
+
       tokenPos++;
     }
     else if (src[pos] == '>' && !insideStr)
@@ -274,9 +285,10 @@ Token *tokenize(char *src)
         return NULL;
       }
       int loops = 0;
-      while (src[pos] != EOF && isdigit(src[pos]))
+      while (src[pos] != '\0' && isdigit(src[pos]))
       {
         num[loops] = src[pos];
+
         pos++;
         loops++;
         if (loops >= buffsize)
@@ -290,9 +302,7 @@ Token *tokenize(char *src)
           }
         }
       }
-
       tokens[tokenPos] = createToken(num, Number);
-      pos++;
       tokenPos++;
     }
     else if (insideStr)
@@ -305,7 +315,7 @@ Token *tokenize(char *src)
         return NULL;
       }
       int loops = 0;
-      while (src[pos] != EOF && src[pos] != (doubleQuotesForStr ? '\"' : '\''))
+      while (src[pos] != '\0' && src[pos] != (doubleQuotesForStr ? '\"' : '\''))
       {
         ident[loops] = src[pos];
         pos++;
@@ -336,7 +346,7 @@ Token *tokenize(char *src)
         return NULL;
       }
       int loops = 0;
-      while (src[pos] != EOF && isAlpha(src[pos]))
+      while (src[pos] != '\0' && isAlpha(src[pos]))
       {
         ident[loops] = src[pos];
         pos++;
@@ -355,6 +365,7 @@ Token *tokenize(char *src)
 
       if (strcmp(ident, "var") == 0 || strcmp(ident, "Var") == 0)
       {
+
         tokens[tokenPos] = createToken(ident, Var);
         pos++;
         tokenPos++;
@@ -430,6 +441,7 @@ Token *tokenize(char *src)
       }
       else
       {
+
         tokens[tokenPos] = createToken(ident, Identifier);
         pos++;
         tokenPos++;
