@@ -7,7 +7,7 @@
 typedef enum TokenType
 {
   Number,
-  Identifier,
+  Ident,
   Var,
   Print,
   Const,
@@ -53,7 +53,6 @@ typedef struct
 Token createToken(const char *value, TokenType type)
 {
 
-  // test print printf("OG: %s", value);
   bool isEmpty = true;
 
   if (*value != '\0')
@@ -67,11 +66,10 @@ Token createToken(const char *value, TokenType type)
   if (valueCopy == NULL)
   {
     printf("Memory allocation failed when creating token. Exiting...");
-    exit(1);
+    exit(EXIT_FAILURE);
   }
 
   strcpy(valueCopy, value);
-  // test print printf("Val: %s", valueCopy);
 
   Token ret = {valueCopy, type};
   return ret;
@@ -106,7 +104,7 @@ Token *tokenize(char *src)
   if (tokens == NULL)
   {
     printf("Memory allocation failed when tokenizing source code. Exiting...");
-    return NULL;
+    exit(EXIT_FAILURE);
   }
   bool insideStr = false;
   bool doubleQuotesForStr = false;
@@ -311,7 +309,7 @@ Token *tokenize(char *src)
       if (num == NULL)
       {
         printf("Memory allocation failed when creating number. Exiting...");
-        return NULL;
+        exit(EXIT_FAILURE);
       }
       int loops = 0;
       while (src[pos] != '\0' && isdigit(src[pos]))
@@ -327,7 +325,7 @@ Token *tokenize(char *src)
           if (num == NULL)
           {
             printf("Memory reallocation failed when creating number. Exiting...");
-            return NULL;
+            exit(EXIT_FAILURE);
           }
         }
       }
@@ -342,7 +340,7 @@ Token *tokenize(char *src)
       if (ident == NULL)
       {
         printf("Memory allocation failed when creating string ident. Exiting...");
-        return NULL;
+        exit(EXIT_FAILURE);
       }
       int loops = 0;
       while (src[pos] != '\0' && src[pos] != (doubleQuotesForStr ? '\"' : '\''))
@@ -357,13 +355,13 @@ Token *tokenize(char *src)
           if (ident == NULL)
           {
             printf("Memory reallocation failed when creating string ident. Exiting...");
-            return NULL;
+            exit(EXIT_FAILURE);
           }
         }
       }
 
       ident[loops] = '\0';
-      tokens[tokenPos] = createToken(ident, Identifier);
+      tokens[tokenPos] = createToken(ident, Ident);
       tokenPos++;
     }
     else if (isAlpha(src[pos]))
@@ -374,7 +372,7 @@ Token *tokenize(char *src)
       if (ident == NULL)
       {
         printf("Memory allocation failed when creating ident. Exiting...");
-        return NULL;
+        exit(EXIT_FAILURE);
       }
       int loops = 0;
       while (src[pos] != '\0' && src[pos] != '\n' && isAlpha(src[pos]))
@@ -389,7 +387,7 @@ Token *tokenize(char *src)
           if (ident == NULL)
           {
             printf("Memory reallocation failed when creating ident. Exiting...");
-            return NULL;
+            exit(EXIT_FAILURE);
           }
         }
       }
@@ -462,7 +460,7 @@ Token *tokenize(char *src)
       else
       {
 
-        tokens[tokenPos] = createToken(ident, Identifier);
+        tokens[tokenPos] = createToken(ident, Ident);
         tokenPos++;
       }
     }
@@ -473,7 +471,7 @@ Token *tokenize(char *src)
     else
     {
       printf("Character not recognised when parsing: %c. Code: %d. ", src[pos], (int)src[pos]);
-      return NULL;
+      exit(EXIT_FAILURE);
     }
 
     if (tokenPos + 2 >= buffsize)
@@ -483,7 +481,7 @@ Token *tokenize(char *src)
       if (tokens == NULL)
       {
         printf("Memory reallocation failed when tokenizing source code. Exiting...");
-        return NULL;
+        exit(EXIT_FAILURE);
       }
     }
   }

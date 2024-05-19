@@ -4,7 +4,7 @@
 typedef enum TokenType
 {
   Number,
-  Identifier,
+  Ident,
   Var,
   Print,
   Const,
