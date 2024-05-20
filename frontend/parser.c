@@ -1,13 +1,26 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
 #include "lexer.h"
 #include "ast.h"
 
 Stat *parse_stat(Token *, int *);
 Stat *parse_expr(Token *, int *);
 Stat *parse_string(Token *tk, int *index);
+Stat *parse_additive_expr(Token *tk, int *index);
+Stat *parse_and_or_expr(Token *tk, int *index);
+Stat *parse_object_arr_expr(Token *tk, int *index);
+Stat *parse_assignmnet_expr(Token *tk, int *index);
+Stat *parse_primary_expr(Token *tk, int *index);
+Stat *parse_member_expr(Token *tk, int *index);
+Stat *parse_arguments_list(Token *tk, int *index);
+Stat *parse_call_expr(Token *tk, int *index, Stat *caller);
+Stat *parse_multiplicitave_expr(Token *tk, int *index);
+Stat *parse_call_member_expr(Token *tk, int *index);
+Stat *parse_args(Token *tk, int *index);
 Stat *produceAst(char *src);
+double string_to_double(const char *str);
 
 Token eat(Token *tk, int *index)
 {
@@ -48,7 +61,7 @@ Stat *produceAst(char *src)
     printf("Type: %d, Value: %s\n", tokens[j].type, tokens[j].value);
     j++;
   }
-
+  printf("Type: %d, Value: %s\n", tokens[j].type, tokens[j].value);
   int arr_buffsize = 20;
   void *arr = malloc(arr_buffsize * sizeof(Stat));
 
@@ -71,16 +84,18 @@ Stat *produceAst(char *src)
 
   int i = 0;
 
-  while (tokens[i].type != ENDFILE)
+  while (tokens[i - 1].type != ENDFILE)
   {
-
     Stat *stat = parse_stat(tokens, &i);
 
     memcpy(arr + i * sizeof(Stat), stat, sizeof(Stat));
+
     free(stat);
+
     i++;
     if (i >= arr_buffsize)
     {
+
       arr_buffsize *= 2;
       arr = realloc(arr, arr_buffsize * sizeof(Stat));
       if (arr == NULL)
@@ -90,6 +105,7 @@ Stat *produceAst(char *src)
       }
     }
   }
+
   program->data->Program->body = arr;
   program->data->Program->bodyCount = i;
   free(tokens);
@@ -127,14 +143,418 @@ Stat *parse_expr(Token *tk, int *index)
     return parse_string(tk, index);
     // case Funct:
     //  return parse_funct_declaration(tk, index);
-    // default:
-    //  return parse_assignmnet_expr(tk, index);
+  default:
+    return parse_assignmnet_expr(tk, index);
   }
   exit(EXIT_FAILURE);
 }
 
+Stat *parse_assignmnet_expr(Token *tk, int *index)
+{
+  Stat *left = parse_object_arr_expr(tk, index);
+  return left;
+}
+
+Stat *parse_object_arr_expr(Token *tk, int *index)
+{
+  switch (tk[*index].type)
+  {
+  // case OpenBracket:
+  // return parse_arr_expr();
+  // case OpenBrace:
+  // return parse_object_expr();
+  default:
+    return parse_and_or_expr(tk, index);
+  }
+}
+
+Stat *parse_and_or_expr(Token *tk, int *index)
+{
+  Stat *left = parse_additive_expr(tk, index);
+
+  while (
+      tk[*index].value == "and" ||
+      tk[*index].value == "And" ||
+      tk[*index].value == "or" ||
+      tk[*index].value == "Or")
+  {
+    char *operator= eat(tk, index).value;
+    Stat *right = parse_additive_expr(tk, index);
+    Stat *andOrExpr = malloc(sizeof(Stat));
+    if (andOrExpr == NULL)
+    {
+      printf("Memory allocation failed when parsing and/or token.\n");
+      exit(EXIT_FAILURE);
+    }
+
+    andOrExpr->kind = Kind_BinaryExpr;
+    andOrExpr->data = (StatData *)malloc(sizeof(StatData));
+    if (andOrExpr->data == NULL)
+    {
+      printf("Memory allocation failed when parsing and/or token.\n");
+      exit(EXIT_FAILURE);
+    }
+    andOrExpr->data->ExprData = (ExprData *)malloc(sizeof(ExprData));
+    if (andOrExpr->data->ExprData == NULL)
+    {
+      printf("Memory allocation failed when parsing and/or token.\n");
+      exit(EXIT_FAILURE);
+    }
+    andOrExpr->data->ExprData->BinaryExpr = (BinaryExpr *)malloc(sizeof(BinaryExpr));
+    if (andOrExpr->data->ExprData->BinaryExpr == NULL)
+    {
+      printf("Memory allocation failed when parsing and/or token.\n");
+      exit(EXIT_FAILURE);
+    }
+    andOrExpr->data->ExprData->BinaryExpr->left = left;
+    andOrExpr->data->ExprData->BinaryExpr->right = right;
+    andOrExpr->data->ExprData->BinaryExpr->binaryOperator = operator;
+    if (!(tk[*index].value == "and" ||
+          tk[*index].value == "And" ||
+          tk[*index].value == "or" ||
+          tk[*index].value == "Or"))
+    {
+      return andOrExpr;
+    }
+  }
+
+  return left;
+}
+
+Stat *parse_additive_expr(Token *tk, int *index)
+{
+  Stat *left = parse_multiplicitave_expr(tk, index);
+
+  while (
+      tk[*index].value[0] == '+' ||
+      tk[*index].value[0] == '-' ||
+      (tk[*index].value[0] == '=' && tk[*index].value[1] == '=') ||
+      (tk[*index].value[0] == '>' && tk[*index].value[1] == '=') ||
+      (tk[*index].value[0] == '<' && tk[*index].value[1] == '=') ||
+      (tk[*index].value[0] == '!' && tk[*index].value[1] == '=') ||
+      tk[*index].value[0] == '>' ||
+      tk[*index].value[0] == '<')
+  {
+    char *operator= eat(tk, index).value;
+    Stat *right = parse_multiplicitave_expr(tk, index);
+    Stat *additiveExpr = malloc(sizeof(Stat));
+    if (additiveExpr == NULL)
+    {
+      printf("Memory allocation failed when parsing additive token.\n");
+      exit(EXIT_FAILURE);
+    }
+
+    additiveExpr->kind = Kind_BinaryExpr;
+    additiveExpr->data = (StatData *)malloc(sizeof(StatData));
+    if (additiveExpr->data == NULL)
+    {
+      printf("Memory allocation failed when parsing additive token.\n");
+      exit(EXIT_FAILURE);
+    }
+    additiveExpr->data->ExprData = (ExprData *)malloc(sizeof(ExprData));
+    if (additiveExpr->data->ExprData == NULL)
+    {
+      printf("Memory allocation failed when parsing additive token.\n");
+      exit(EXIT_FAILURE);
+    }
+    additiveExpr->data->ExprData->BinaryExpr = (BinaryExpr *)malloc(sizeof(BinaryExpr));
+    if (additiveExpr->data->ExprData->BinaryExpr == NULL)
+    {
+      printf("Memory allocation failed when parsing additive token.\n");
+      exit(EXIT_FAILURE);
+    }
+    additiveExpr->data->ExprData->BinaryExpr->left = left;
+    additiveExpr->data->ExprData->BinaryExpr->right = right;
+    additiveExpr->data->ExprData->BinaryExpr->binaryOperator = operator;
+    if (!(
+            tk[*index].value[0] == '+' ||
+            tk[*index].value[0] == '-' ||
+            (tk[*index].value[0] == '=' && tk[*index].value[1] == '=') ||
+            (tk[*index].value[0] == '>' && tk[*index].value[1] == '=') ||
+            (tk[*index].value[0] == '<' && tk[*index].value[1] == '=') ||
+            (tk[*index].value[0] == '!' && tk[*index].value[1] == '=') ||
+            tk[*index].value[0] == '>' ||
+            tk[*index].value[0] == '<'))
+    {
+      return additiveExpr;
+    }
+  }
+
+  return left;
+}
+
+Stat *parse_multiplicitave_expr(Token *tk, int *index)
+{
+  Stat *left = parse_call_member_expr(tk, index);
+  while (
+      tk[*index].value[0] == '/' ||
+      tk[*index].value[0] == '*' ||
+      tk[*index].value[0] == '%')
+  {
+    char *operator= eat(tk, index).value;
+    Stat *right = parse_call_member_expr(tk, index);
+    Stat *multiplicitaveExpr = malloc(sizeof(Stat));
+    if (multiplicitaveExpr == NULL)
+    {
+      printf("Memory allocation failed when parsing multiplicitave token.\n");
+      exit(EXIT_FAILURE);
+    }
+
+    multiplicitaveExpr->kind = Kind_BinaryExpr;
+    multiplicitaveExpr->data = (StatData *)malloc(sizeof(StatData));
+    if (multiplicitaveExpr->data == NULL)
+    {
+      printf("Memory allocation failed when parsing multiplicitave token.\n");
+      exit(EXIT_FAILURE);
+    }
+    multiplicitaveExpr->data->ExprData = (ExprData *)malloc(sizeof(ExprData));
+    if (multiplicitaveExpr->data->ExprData == NULL)
+    {
+      printf("Memory allocation failed when parsing multiplicitave token.\n");
+      exit(EXIT_FAILURE);
+    }
+    multiplicitaveExpr->data->ExprData->BinaryExpr = (BinaryExpr *)malloc(sizeof(BinaryExpr));
+    if (multiplicitaveExpr->data->ExprData->BinaryExpr == NULL)
+    {
+      printf("Memory allocation failed when parsing multiplicitave token.\n");
+      exit(EXIT_FAILURE);
+    }
+    multiplicitaveExpr->data->ExprData->BinaryExpr->left = left;
+    multiplicitaveExpr->data->ExprData->BinaryExpr->right = right;
+    multiplicitaveExpr->data->ExprData->BinaryExpr->binaryOperator = operator;
+    if (!(
+            tk[*index].value[0] == '/' ||
+            tk[*index].value[0] == '*' ||
+            tk[*index].value[0] == '%'))
+    {
+      return multiplicitaveExpr;
+    }
+  }
+
+  return left;
+}
+
+Stat *parse_call_member_expr(Token *tk, int *index)
+{
+  Stat *member = parse_member_expr(tk, index);
+  if (tk[*index].type == OpenParen)
+  {
+    return parse_call_expr(tk, index, member);
+  }
+  return member;
+}
+
+Stat *parse_call_expr(Token *tk, int *index, Stat *caller)
+{
+  Stat *call_expr = malloc(sizeof(Stat));
+  if (call_expr == NULL)
+  {
+    printf("Memory allocation failed when parsing call expression.\n");
+    exit(EXIT_FAILURE);
+  }
+
+  call_expr->kind = Kind_CallExpr;
+  call_expr->data = (StatData *)malloc(sizeof(StatData));
+  if (call_expr->data == NULL)
+  {
+    printf("Memory allocation failed when parsing call expression.\n");
+    exit(EXIT_FAILURE);
+  }
+  call_expr->data->ExprData = (ExprData *)malloc(sizeof(ExprData));
+  if (call_expr->data->ExprData == NULL)
+  {
+    printf("Memory allocation failed when parsing call expression.\n");
+    exit(EXIT_FAILURE);
+  }
+  call_expr->data->ExprData->CallExpr = (CallExpr *)malloc(sizeof(CallExpr));
+  if (call_expr->data->ExprData->CallExpr == NULL)
+  {
+    printf("Memory allocation failed when parsing call expression.\n");
+    exit(EXIT_FAILURE);
+  }
+  call_expr->data->ExprData->CallExpr->args = parse_args(tk, index);
+  size_t size = sizeof(call_expr->data->ExprData->CallExpr->args) / sizeof(call_expr->data->ExprData->CallExpr->args[0]);
+  call_expr->data->ExprData->CallExpr->argCount = size;
+  call_expr->data->ExprData->CallExpr->caller = caller;
+  if (tk[*index].type == OpenParen)
+  {
+    call_expr = parse_call_expr(tk, index, call_expr);
+  }
+
+  return call_expr;
+}
+
+Stat *parse_args(Token *tk, int *index)
+{
+  expect(OpenParen, "Expected open parenthesis when parsing args.", tk, index);
+
+  Stat *args = NULL;
+  if (tk[*index].type != ClosedParen)
+  {
+    args = parse_arguments_list(tk, index);
+  }
+  expect(ClosedParen, "Expected closing parenthesis when parsing args.", tk, index);
+  if (tk[*index].type == Semicolon)
+  {
+    eat(tk, index);
+  }
+  return args;
+}
+
+Stat *parse_arguments_list(Token *tk, int *index)
+{
+  int argsBuffSize = 5;
+  Stat **args = malloc(argsBuffSize * sizeof(Stat));
+  if (args == NULL)
+  {
+    printf("Memory allocation failed when reallocating args.");
+    exit(EXIT_FAILURE);
+  }
+  int i = 0;
+  args[i] = parse_expr(tk, index);
+  i++;
+  while (((tk[*index].type != ENDFILE) && (tk[*index].type == Comma)))
+  {
+    eat(tk, index);
+    args[i] = parse_expr(tk, index);
+    i++;
+    if (i >= argsBuffSize)
+    {
+      argsBuffSize *= 2;
+      args = realloc(args, argsBuffSize * sizeof(Stat));
+      if (args == NULL)
+      {
+        printf("Memory reallocation failed when reallocating args.");
+        exit(EXIT_FAILURE);
+      }
+    }
+  }
+
+  return *args;
+}
+
+Stat *parse_member_expr(Token *tk, int *index)
+{
+  return parse_primary_expr(tk, index);
+}
+
+Stat *parse_primary_expr(Token *tk, int *index)
+{
+  switch (tk[*index].type)
+  {
+  case Ident:
+    Stat *ident_expr = malloc(sizeof(Stat));
+    if (ident_expr == NULL)
+    {
+      printf("Memory allocation failed when parsing primary identifier expression.\n");
+      exit(EXIT_FAILURE);
+    }
+
+    ident_expr->kind = Kind_Identifier;
+    ident_expr->data = (StatData *)malloc(sizeof(StatData));
+    if (ident_expr->data == NULL)
+    {
+      printf("Memory allocation failed when parsing primary identifier expression.\n");
+      exit(EXIT_FAILURE);
+    }
+    ident_expr->data->ExprData = (ExprData *)malloc(sizeof(ExprData));
+    if (ident_expr->data->ExprData == NULL)
+    {
+      printf("Memory allocation failed when parsing primary identifier expression.\n");
+      exit(EXIT_FAILURE);
+    }
+    ident_expr->data->ExprData->Identifier = (Identifier *)malloc(sizeof(Identifier));
+    if (ident_expr->data->ExprData->Identifier == NULL)
+    {
+      printf("Memory allocation failed when parsing primary identifier expression.\n");
+      exit(EXIT_FAILURE);
+    }
+    ident_expr->data->ExprData->Identifier->symbol = eat(tk, index).value;
+    return ident_expr;
+  case Number:
+    Stat *number_expr = malloc(sizeof(Stat));
+    if (number_expr == NULL)
+    {
+      printf("Memory allocation failed when parsing primary numeric expression.\n");
+      exit(EXIT_FAILURE);
+    }
+
+    number_expr->kind = Kind_NumericLiteral;
+    number_expr->data = (StatData *)malloc(sizeof(StatData));
+    if (number_expr->data == NULL)
+    {
+      printf("Memory allocation failed when parsing primary numeric expression.\n");
+      exit(EXIT_FAILURE);
+    }
+    number_expr->data->ExprData = (ExprData *)malloc(sizeof(ExprData));
+    if (number_expr->data->ExprData == NULL)
+    {
+      printf("Memory allocation failed when parsing primary numeric expression.\n");
+      exit(EXIT_FAILURE);
+    }
+    number_expr->data->ExprData->NumericLiteral = (NumericLiteral *)malloc(sizeof(NumericLiteral));
+    if (number_expr->data->ExprData->NumericLiteral == NULL)
+    {
+      printf("Memory allocation failed when parsing primary numeric expression.\n");
+      exit(EXIT_FAILURE);
+    }
+    number_expr->data->ExprData->NumericLiteral->value = string_to_double(eat(tk, index).value);
+    return number_expr;
+  case OpenParen:
+  {
+    eat(tk, index);
+    Stat *value = parse_expr(tk, index);
+
+    expect(ClosedParen, "Expected closed parenthasis when parsing primary expressions.", tk, index);
+    return value;
+  }
+  default:
+    printf("Unexpected token found during parsing! Type: %d", tk[*index].type);
+    exit(EXIT_FAILURE);
+  }
+}
+
+double string_to_double(const char *str)
+{
+  double result = 0.0;
+  bool first_digit = true;
+  bool after_decimal = false;
+
+  for (; *str != '\0'; ++str)
+  {
+    if (isdigit(*str))
+    {
+      if (first_digit)
+      {
+        result = *str - '0';
+        first_digit = false;
+      }
+      else if (after_decimal)
+      {
+        result = result * 10.0 + ((*str - '0') / 10.0);
+      }
+      else
+      {
+        result = result * 10.0 + (*str - '0');
+      }
+    }
+    else if (*str == '.')
+    {
+      after_decimal = true;
+    }
+    else
+    {
+      printf("String value assigned as number.");
+      exit(EXIT_FAILURE);
+    }
+  }
+
+  return result;
+}
+
 Stat *parse_string(Token *tk, int *index)
 {
+
   int quoteType;
   if (tk[*index].type == DQuote)
   {
@@ -154,6 +574,7 @@ Stat *parse_string(Token *tk, int *index)
 
   if (tk[*index].type == quoteType)
   {
+
     eat(tk, index);
     Stat *emptyStrLit = malloc(sizeof(Stat));
     if (emptyStrLit == NULL)
@@ -189,6 +610,7 @@ Stat *parse_string(Token *tk, int *index)
   char err[] = "Expected Identifier inside string";
   char *value = expect(Ident, err, tk, index).value;
   Stat *str = malloc(sizeof(Stat));
+
   if (str == NULL)
   {
     printf("Memory allocation failed when parsing string token.\n");
@@ -222,7 +644,8 @@ Stat *parse_string(Token *tk, int *index)
     printf("Expected corresponding end quote at the end of a string.");
     exit(EXIT_FAILURE);
   }
-  eat(tk, index);
+
+  expect(quoteType, "Expected end quote at end of string.", tk, index);
 
   return str;
 }

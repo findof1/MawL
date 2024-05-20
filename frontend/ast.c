@@ -74,7 +74,6 @@ struct Expr
   ExprData *data;
 };
 
-// Define Stat struct and StatData union first
 union StatData
 {
   Program *Program;
@@ -84,7 +83,7 @@ union StatData
   IfStatement *IfStatement;
   WhileStatement *WhileStatement;
   ForStatement *ForStatement;
-  Expr *Expr;
+  ExprData *ExprData;
 };
 
 struct Stat
@@ -93,7 +92,6 @@ struct Stat
   StatData *data;
 };
 
-// Define other structs that depend on Expr and Stat
 struct Program
 {
   Stat *body;
@@ -102,14 +100,14 @@ struct Program
 
 struct ReturnStat
 {
-  Expr right;
+  Stat right;
 };
 
 struct VarDeclaration
 {
   bool constant;
   char *identifier;
-  Expr value;
+  Stat value;
 };
 
 struct FunctionDeclaration
@@ -119,12 +117,12 @@ struct FunctionDeclaration
   char *name;
   Stat *body;
   size_t bodyCount;
-  Expr ret;
+  Stat ret;
 };
 
 struct IfStatement
 {
-  Expr comparison;
+  Stat comparison;
   Stat *body;
   size_t bodyCount;
   Stat *elseBody;
@@ -133,7 +131,7 @@ struct IfStatement
 
 struct WhileStatement
 {
-  Expr comparison;
+  Stat comparison;
   Stat *body;
   size_t bodyCount;
 };
@@ -141,36 +139,36 @@ struct WhileStatement
 struct ForStatement
 {
   VarDeclaration variable;
-  Expr increment;
-  Expr comparison;
+  Stat increment;
+  Stat comparison;
   Stat *body;
   size_t bodyCount;
 };
 
 struct AssignmentExpr
 {
-  Expr assignee;
-  Expr value;
+  Stat assignee;
+  Stat value;
 };
 
 struct BinaryExpr
 {
-  Expr left;
-  Expr right;
+  Stat *left;
+  Stat *right;
   char *binaryOperator;
 };
 
 struct CallExpr
 {
-  Expr *args;
+  Stat *args;
   size_t argCount;
-  Expr caller;
+  Stat *caller;
 };
 
 struct MemberExpr
 {
-  Expr object;
-  Expr property;
+  Stat object;
+  Stat property;
   bool computed;
 };
 
@@ -192,7 +190,7 @@ struct StringLiteral
 struct Property
 {
   char *key;
-  Expr value;
+  Stat value;
 };
 
 struct ObjectLiteral
@@ -204,7 +202,7 @@ struct ObjectLiteral
 struct ArrProperty
 {
   size_t key;
-  Expr value;
+  Stat value;
 };
 
 struct ArrLiteral
