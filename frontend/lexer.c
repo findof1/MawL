@@ -425,11 +425,13 @@ Token *tokenize(char *src)
         tokens[tokenPos] = createToken(ident, Else);
         tokenPos++;
       }
-      else if (strcmp(ident, "ifelse") == 0 || strcmp(ident, "Ifelse") == 0 || strcmp(ident, "IfElse") == 0 || strcmp(ident, "ifElse") == 0)
+      else if (strcmp(ident, "elseif") == 0 || strcmp(ident, "Elseif") == 0 || strcmp(ident, "ElseIf") == 0 || strcmp(ident, "elseIf") == 0)
       {
-        tokens[tokenPos] = createToken(ident, If);
+        char value[] = {'e', 'l', 's', 'e', '\0'};
+        tokens[tokenPos] = createToken(value, Else);
         tokenPos++;
-        tokens[tokenPos] = createToken(ident, Else);
+        char value2[] = {'i', 'f', '\0'};
+        tokens[tokenPos] = createToken(value2, If);
         tokenPos++;
       }
       else if (strcmp(ident, "while") == 0 || strcmp(ident, "While") == 0)

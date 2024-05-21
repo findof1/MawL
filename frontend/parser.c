@@ -18,6 +18,9 @@ Stat *parse_arguments_list(Token *tk, int *index);
 Stat *parse_call_expr(Token *tk, int *index, Stat *caller);
 Stat *parse_multiplicitave_expr(Token *tk, int *index);
 Stat *parse_call_member_expr(Token *tk, int *index);
+Stat *parse_var_declaration(Token *tk, int *index);
+Stat *parse_funct_declaration(Token *tk, int *index);
+Stat *parse_if_stat(Token *tk, int *index);
 Stat *parse_args(Token *tk, int *index);
 Stat *produceAst(char *src);
 double string_to_double(const char *str);
@@ -84,7 +87,7 @@ Stat *produceAst(char *src)
 
   int i = 0;
 
-  while (tokens[i - 1].type != ENDFILE)
+  while (tokens[i - 1].type != ENDFILE && tokens[i].type != ENDFILE)
   {
     Stat *stat = parse_stat(tokens, &i);
 
@@ -116,12 +119,12 @@ Stat *parse_stat(Token *tk, int *index)
 {
   switch (tk[*index].type)
   {
-    // case Var:
-    // return parse_var_declaration(tk, index);
-  // case Const:
-  // return parse_var_declaration(tk, index);
-  // case If:
-  //  return parse_if_stat(tk, index);
+  case Var:
+    return parse_var_declaration(tk, index);
+  case Const:
+    return parse_var_declaration(tk, index);
+  case If:
+    return parse_if_stat(tk, index);
   // case While:
   //  return parse_while_stat(tk, index);
   // case Return:
@@ -133,6 +136,241 @@ Stat *parse_stat(Token *tk, int *index)
   }
 }
 
+Stat *parse_if_stat(Token *tk, int *index)
+{
+  int bodycount = 0;
+  int elsecount = 0;
+  eat(tk, index);
+  expect(
+      OpenParen,
+      "Expected open parenthesis during if statement.", tk, index);
+  Stat *comparison = parse_expr(tk, index);
+  expect(
+      ClosedParen,
+      "Expected closing parenthesis during if statment.", tk, index);
+
+  int ifBodyBuff = 10;
+  Stat **body = malloc(ifBodyBuff * sizeof(Stat *));
+  if (body == NULL)
+  {
+    printf("Memory allocation failure when parsing if statement.");
+    exit(EXIT_FAILURE);
+  }
+  expect(OpenBrace, "Expected open brace in if statement", tk, index);
+  int i = 0;
+  while (
+      tk[*index].type != ENDFILE &&
+      tk[*index].type != ClosedBrace)
+  {
+    body[i] = parse_stat(tk, index);
+    i++;
+    if (i >= ifBodyBuff)
+    {
+      ifBodyBuff *= 2;
+      body = realloc(body, ifBodyBuff * sizeof(Stat *));
+      if (body == NULL)
+      {
+        printf("Memory reallocation failure when parsing if statement.");
+        exit(EXIT_FAILURE);
+      }
+    }
+  }
+  bodycount = i;
+
+  expect(ClosedBrace, "Closing brace expected after if statement", tk, index);
+
+  if (tk[*index].type == Else)
+  {
+
+    eat(tk, index);
+
+    int elseBodyBuff = 10;
+    Stat **elseBody = NULL;
+
+    if (tk[*index].type == If)
+    {
+
+      Stat **elseBody = malloc(1 * sizeof(Stat *));
+      if (body == NULL)
+      {
+        printf("Memory allocation failure when parsing else statement.");
+        exit(EXIT_FAILURE);
+      }
+      elseBody[0] = parse_stat(tk, index);
+
+      elsecount = 1;
+    }
+    else
+    {
+      expect(OpenBrace, "Expected open brace in if statement", tk, index);
+      Stat **elseBody = malloc(elseBodyBuff * sizeof(Stat *));
+      if (body == NULL)
+      {
+        printf("Memory allocation failure when parsing else statement.");
+        exit(EXIT_FAILURE);
+      }
+      int i = 0;
+      while (
+          tk[*index].type != ENDFILE &&
+          tk[*index].type != ClosedBrace)
+      {
+        elseBody[i] = parse_stat(tk, index);
+        i++;
+        if (i >= elseBodyBuff)
+        {
+          elseBodyBuff *= 2;
+          elseBody = realloc(elseBody, elseBodyBuff * sizeof(Stat *));
+          if (elseBody == NULL)
+          {
+            printf("Memory reallocation failure when parsing else statement.");
+            exit(EXIT_FAILURE);
+          }
+        }
+      }
+      elsecount = i;
+      expect(
+          ClosedBrace,
+          "Closing brace expected after if statement", tk, index);
+    }
+
+    Stat *ifElseStat = malloc(sizeof(Stat));
+    if (ifElseStat == NULL)
+    {
+      printf("Memory allocation failed when parsing if statement.\n");
+      exit(EXIT_FAILURE);
+    }
+
+    ifElseStat->kind = Kind_IfStatement;
+    ifElseStat->data = (StatData *)malloc(sizeof(StatData));
+    if (ifElseStat->data == NULL)
+    {
+      printf("Memory allocation failed when parsing if statement.\n");
+      exit(EXIT_FAILURE);
+    }
+    ifElseStat->data->IfStatement = (IfStatement *)malloc(sizeof(IfStatement));
+    if (ifElseStat->data->IfStatement == NULL)
+    {
+      printf("Memory allocation failed when parsing if statement.\n");
+      exit(EXIT_FAILURE);
+    }
+    ifElseStat->data->IfStatement->comparison = comparison;
+    ifElseStat->data->IfStatement->body = body;
+    ifElseStat->data->IfStatement->elseBody = elseBody;
+    ifElseStat->data->IfStatement->bodyCount = bodycount;
+    ifElseStat->data->IfStatement->elseBodyCount = elsecount;
+
+    return ifElseStat;
+  }
+  else
+  {
+    Stat *ifStat = malloc(sizeof(Stat));
+    if (ifStat == NULL)
+    {
+      printf("Memory allocation failed when parsing if statement.\n");
+      exit(EXIT_FAILURE);
+    }
+
+    ifStat->kind = Kind_IfStatement;
+    ifStat->data = (StatData *)malloc(sizeof(StatData));
+    if (ifStat->data == NULL)
+    {
+      printf("Memory allocation failed when parsing if statement.\n");
+      exit(EXIT_FAILURE);
+    }
+    ifStat->data->IfStatement = (IfStatement *)malloc(sizeof(IfStatement));
+    if (ifStat->data->IfStatement == NULL)
+    {
+      printf("Memory allocation failed when parsing if statement.\n");
+      exit(EXIT_FAILURE);
+    }
+    ifStat->data->IfStatement->comparison = comparison;
+    ifStat->data->IfStatement->body = body;
+    ifStat->data->IfStatement->elseBody = NULL;
+    ifStat->data->IfStatement->bodyCount = bodycount;
+    ifStat->data->IfStatement->elseBodyCount = 0;
+
+    return ifStat;
+  }
+}
+
+Stat *parse_var_declaration(Token *tk, int *index)
+{
+  bool isConstant = (eat(tk, index).type == Const);
+  char *identifier = expect(Ident, "Expected identifier name following var or const keyword.", tk, index).value;
+
+  if (tk[*index].type == Semicolon)
+  {
+    eat(tk, index);
+    if (isConstant)
+    {
+      printf("Must assign value to constant expression. No value provided.");
+      exit(EXIT_FAILURE);
+    }
+
+    Stat *varDec = malloc(sizeof(Stat));
+    if (varDec == NULL)
+    {
+      printf("Memory allocation failed when parsing variable declaration.\n");
+      exit(EXIT_FAILURE);
+    }
+
+    varDec->kind = Kind_VarDeclaration;
+    varDec->data = (StatData *)malloc(sizeof(StatData));
+    if (varDec->data == NULL)
+    {
+      printf("Memory allocation failed when parsing variable declaration.\n");
+      exit(EXIT_FAILURE);
+    }
+    varDec->data->VarDeclaration = (VarDeclaration *)malloc(sizeof(VarDeclaration));
+    if (varDec->data->VarDeclaration == NULL)
+    {
+      printf("Memory allocation failed when parsing variable declaration.\n");
+      exit(EXIT_FAILURE);
+    }
+
+    varDec->data->VarDeclaration->identifier = identifier;
+    varDec->data->VarDeclaration->constant = false;
+    return varDec;
+  }
+
+  expect(
+      Equals,
+      "Exprected equals sign when declaring variable.",
+      tk,
+      index);
+
+  Stat *varDec = malloc(sizeof(Stat));
+  if (varDec == NULL)
+  {
+    printf("Memory allocation failed when parsing variable declaration.\n");
+    exit(EXIT_FAILURE);
+  }
+
+  varDec->kind = Kind_VarDeclaration;
+  varDec->data = (StatData *)malloc(sizeof(StatData));
+  if (varDec->data == NULL)
+  {
+    printf("Memory allocation failed when parsing variable declaration.\n");
+    exit(EXIT_FAILURE);
+  }
+  varDec->data->VarDeclaration = (VarDeclaration *)malloc(sizeof(VarDeclaration));
+  if (varDec->data->VarDeclaration == NULL)
+  {
+    printf("Memory allocation failed when parsing variable declaration.\n");
+    exit(EXIT_FAILURE);
+  }
+  varDec->data->VarDeclaration->identifier = identifier;
+  varDec->data->VarDeclaration->constant = isConstant;
+  varDec->data->VarDeclaration->value = parse_expr(tk, index);
+
+  if (tk[*index].type == Semicolon)
+  {
+    eat(tk, index);
+  }
+
+  return varDec;
+}
+
 Stat *parse_expr(Token *tk, int *index)
 {
   switch (tk[*index].type)
@@ -141,12 +379,107 @@ Stat *parse_expr(Token *tk, int *index)
     return parse_string(tk, index);
   case SQuote:
     return parse_string(tk, index);
-    // case Funct:
-    //  return parse_funct_declaration(tk, index);
+  case Funct:
+    return parse_funct_declaration(tk, index);
   default:
     return parse_assignmnet_expr(tk, index);
   }
   exit(EXIT_FAILURE);
+}
+
+Stat *parse_funct_declaration(Token *tk, int *index)
+{
+  eat(tk, index);
+
+  char *name = expect(Ident, "Expected function name following funct keyword.", tk, index).value;
+  Stat *args = parse_args(tk, index);
+  int agrs_size = sizeof(args) / sizeof(args[0]);
+  int paramBuff = 5;
+  char **paramaters = malloc(paramBuff * sizeof(char *));
+  if (paramaters == NULL)
+  {
+    printf("Memory allocation failed when parsing paramaters inside function declaration.\n");
+    exit(EXIT_FAILURE);
+  }
+  int i;
+  for (i = 0; i < agrs_size; i)
+  {
+    if (args[0].kind != Ident)
+    {
+      printf("Expected identifier pared into agrs of functions.");
+      exit(EXIT_FAILURE);
+    }
+    paramaters[i] = args[i].data->ExprData->Identifier->symbol;
+
+    i++;
+    if (i >= paramBuff)
+    {
+      char **paramaters = realloc(paramaters, paramBuff * sizeof(char *));
+      if (paramaters == NULL)
+      {
+        printf("Memory reallocation failed when parsing paramaters inside function declaration.\n");
+        exit(EXIT_FAILURE);
+      }
+    }
+  }
+  int paramcount = i;
+  expect(OpenBrace, "Expected function body following declaration.", tk, index);
+  int bodyBuff = 10;
+  Stat **body = malloc(bodyBuff * sizeof(Stat *));
+  if (body == NULL)
+  {
+    printf("Memory allocation failure when parsing if statement.");
+    exit(EXIT_FAILURE);
+  }
+  int j = 0;
+  while (
+      tk[*index].type != ENDFILE &&
+      tk[*index].type != ClosedBrace)
+  {
+    body[j] = parse_stat(tk, index);
+    j++;
+    if (j >= bodyBuff)
+    {
+      bodyBuff *= 2;
+      body = realloc(body, bodyBuff * sizeof(Stat *));
+      if (body == NULL)
+      {
+        printf("Memory reallocation failure when parsing if statement.");
+        exit(EXIT_FAILURE);
+      }
+    }
+  }
+  int bodycount = j;
+
+  expect(ClosedBrace, "Closing brace expected following function paramaters.", tk, index);
+
+  Stat *functDec = malloc(sizeof(Stat));
+  if (functDec == NULL)
+  {
+    printf("Memory allocation failed when parsing variable declaration.\n");
+    exit(EXIT_FAILURE);
+  }
+
+  functDec->kind = Kind_FunctionDeclaration;
+  functDec->data = (StatData *)malloc(sizeof(StatData));
+  if (functDec->data == NULL)
+  {
+    printf("Memory allocation failed when parsing variable declaration.\n");
+    exit(EXIT_FAILURE);
+  }
+  functDec->data->FunctionDeclaration = (FunctionDeclaration *)malloc(sizeof(FunctionDeclaration));
+  if (functDec->data->FunctionDeclaration == NULL)
+  {
+    printf("Memory allocation failed when parsing variable declaration.\n");
+    exit(EXIT_FAILURE);
+  }
+  functDec->data->FunctionDeclaration->name = name;
+  functDec->data->FunctionDeclaration->body = body;
+  functDec->data->FunctionDeclaration->bodyCount = bodycount;
+  functDec->data->FunctionDeclaration->parameters = paramaters;
+  functDec->data->FunctionDeclaration->paramCount = paramcount;
+
+  return functDec;
 }
 
 Stat *parse_assignmnet_expr(Token *tk, int *index)

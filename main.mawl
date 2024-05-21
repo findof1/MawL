@@ -1,0 +1,7 @@
+funct add (a, b){
+  var x = a + b;
+  if(x > 10){
+    const y = 1;
+  }
+  
+}

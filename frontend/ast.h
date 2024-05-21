@@ -110,26 +110,25 @@ struct VarDeclaration
 {
   bool constant;
   char *identifier;
-  Stat value;
+  Stat *value;
 };
 
 struct FunctionDeclaration
 {
   char **parameters;
-  size_t paramCount;
+  int paramCount;
   char *name;
-  Stat *body;
-  size_t bodyCount;
-  Stat ret;
+  Stat **body;
+  int bodyCount;
 };
 
 struct IfStatement
 {
-  Stat comparison;
-  Stat *body;
-  size_t bodyCount;
-  Stat *elseBody;
-  size_t elseBodyCount;
+  Stat *comparison;
+  Stat **body;
+  int bodyCount;
+  Stat **elseBody;
+  int elseBodyCount;
 };
 
 struct WhileStatement
