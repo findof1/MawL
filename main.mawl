@@ -3,5 +3,9 @@ funct add (a, b){
   if(x > 10){
     const y = 1;
   }
-  
+  var z = {
+    j:x,
+    h:"Hi"
+  }
+
 }

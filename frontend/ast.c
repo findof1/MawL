@@ -189,13 +189,13 @@ struct StringLiteral
 struct Property
 {
   char *key;
-  Stat value;
+  Stat *value;
 };
 
 struct ObjectLiteral
 {
   Property *properties;
-  size_t propertyCount;
+  int propertyCount;
 };
 
 struct ArrProperty

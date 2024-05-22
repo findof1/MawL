@@ -19,6 +19,7 @@ Stat *parse_call_expr(Token *tk, int *index, Stat *caller);
 Stat *parse_multiplicitave_expr(Token *tk, int *index);
 Stat *parse_call_member_expr(Token *tk, int *index);
 Stat *parse_var_declaration(Token *tk, int *index);
+Stat *parse_object_expr(Token *tk, int *index);
 Stat *parse_funct_declaration(Token *tk, int *index);
 Stat *parse_if_stat(Token *tk, int *index);
 Stat *parse_args(Token *tk, int *index);
@@ -525,7 +526,7 @@ Stat *parse_assignmnet_expr(Token *tk, int *index)
     assignExpr->data->ExprData->AssignmentExpr->assignee = left;
     assignExpr->data->ExprData->AssignmentExpr->value = value;
 
-    retrun assignExpr;
+    return assignExpr;
   }
   else if (tk[*index].type == Inc)
   {
@@ -780,13 +781,102 @@ Stat *parse_object_arr_expr(Token *tk, int *index)
 {
   switch (tk[*index].type)
   {
-  // case OpenBracket:
-  // return parse_arr_expr();
-  // case OpenBrace:
-  // return parse_object_expr();
+    // case OpenBracket:
+    // return parse_arr_expr();
+  case OpenBrace:
+    return parse_object_expr(tk, index);
   default:
     return parse_and_or_expr(tk, index);
   }
+}
+
+Stat *parse_object_expr(Token *tk, int *index)
+{
+  if (tk[*index].type != OpenBrace)
+  {
+    return parse_and_or_expr(tk, index);
+  }
+  eat(tk, index);
+  int propBuff = 5;
+  Property *properties = malloc(propBuff * sizeof(Property));
+  if (properties == NULL)
+  {
+    printf("Memory allocation failed when parsing object expression.\n");
+    exit(EXIT_FAILURE);
+  }
+  int i = 0;
+  while (tk[*index].type != ENDFILE && tk[*index].type != ClosedBrace)
+  {
+    char *key = expect(Ident, "Object Literal key expected.", tk, index).value;
+
+    if (tk[*index].type == Comma)
+    {
+      eat(tk, index);
+      Property prop;
+
+      prop.key = key;
+      properties[i] = prop;
+      i++;
+      continue;
+    }
+    else if (tk[*index].type == ClosedBrace)
+    {
+      Property prop;
+
+      prop.key = key;
+      properties[i] = prop;
+      i++;
+      continue;
+    }
+
+    expect(Colon, "Missing Colon following an object expression.", tk, index);
+
+    Stat *value = parse_expr(tk, index);
+
+    Property prop;
+
+    prop.key = key;
+    prop.value = value;
+    properties[i] = prop;
+    i++;
+
+    if (tk[*index].type != ClosedBrace)
+    {
+      expect(Comma, "Expected Comma or Closing Brace following object property.", tk, index);
+    }
+  }
+
+  expect(ClosedBrace, "Expected Closing Brace at the end of your object.", tk, index);
+
+  Stat *objectLit = malloc(sizeof(Stat));
+  if (objectLit == NULL)
+  {
+    printf("Memory allocation failed when parsing object expression.\n");
+    exit(EXIT_FAILURE);
+  }
+
+  objectLit->kind = Kind_ObjectLiteral;
+  objectLit->data = (StatData *)malloc(sizeof(StatData));
+  if (objectLit->data == NULL)
+  {
+    printf("Memory allocation failed when parsing object expression.\n");
+    exit(EXIT_FAILURE);
+  }
+  objectLit->data->ExprData = (ExprData *)malloc(sizeof(ExprData));
+  if (objectLit->data->ExprData == NULL)
+  {
+    printf("Memory allocation failed when parsing object expression.\n");
+    exit(EXIT_FAILURE);
+  }
+  objectLit->data->ExprData->ObjectLiteral = (ObjectLiteral *)malloc(sizeof(ObjectLiteral));
+  if (objectLit->data->ExprData->ObjectLiteral == NULL)
+  {
+    printf("Memory allocation failed when parsing object expression.\n");
+    exit(EXIT_FAILURE);
+  }
+  objectLit->data->ExprData->ObjectLiteral->properties = properties;
+  objectLit->data->ExprData->ObjectLiteral->propertyCount = i;
+  return objectLit;
 }
 
 Stat *parse_and_or_expr(Token *tk, int *index)
