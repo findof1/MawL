@@ -485,6 +485,294 @@ Stat *parse_funct_declaration(Token *tk, int *index)
 Stat *parse_assignmnet_expr(Token *tk, int *index)
 {
   Stat *left = parse_object_arr_expr(tk, index);
+
+  if (tk[*index].type == Equals)
+  {
+    eat(tk, index);
+    Stat *value = parse_expr(tk, index);
+    if (tk[*index].type == Semicolon)
+    {
+      eat(tk, index);
+    }
+
+    Stat *assignExpr = malloc(sizeof(Stat));
+    if (assignExpr == NULL)
+    {
+      printf("Memory allocation failed when parsing assignment expression.\n");
+      exit(EXIT_FAILURE);
+    }
+
+    assignExpr->kind = Kind_AssignmentExpr;
+    assignExpr->data = (StatData *)malloc(sizeof(StatData));
+    if (assignExpr->data == NULL)
+    {
+      printf("Memory allocation failed when parsing assignment expression.\n");
+      exit(EXIT_FAILURE);
+    }
+    assignExpr->data->ExprData = (ExprData *)malloc(sizeof(ExprData));
+    if (assignExpr->data->ExprData == NULL)
+    {
+      printf("Memory allocation failed when parsing assignment expression.\n");
+      exit(EXIT_FAILURE);
+    }
+    assignExpr->data->ExprData->AssignmentExpr = (AssignmentExpr *)malloc(sizeof(AssignmentExpr));
+    if (assignExpr->data->ExprData->AssignmentExpr == NULL)
+    {
+      printf("Memory allocation failed when parsing assignment expression.\n");
+      exit(EXIT_FAILURE);
+    }
+
+    assignExpr->data->ExprData->AssignmentExpr->assignee = left;
+    assignExpr->data->ExprData->AssignmentExpr->value = value;
+
+    retrun assignExpr;
+  }
+  else if (tk[*index].type == Inc)
+  {
+    eat(tk, index);
+
+    Stat *numLit = malloc(sizeof(Stat));
+    if (numLit == NULL)
+    {
+      printf("Memory allocation failed when parsing increment expression.\n");
+      exit(EXIT_FAILURE);
+    }
+
+    numLit->kind = Kind_NumericLiteral;
+    numLit->data = (StatData *)malloc(sizeof(StatData));
+    if (numLit->data == NULL)
+    {
+      printf("Memory allocation failed when parsing increment expression.\n");
+      exit(EXIT_FAILURE);
+    }
+    numLit->data->ExprData = (ExprData *)malloc(sizeof(ExprData));
+    if (numLit->data->ExprData == NULL)
+    {
+      printf("Memory allocation failed when parsing increment expression.\n");
+      exit(EXIT_FAILURE);
+    }
+    numLit->data->ExprData->NumericLiteral = (NumericLiteral *)malloc(sizeof(NumericLiteral));
+    if (numLit->data->ExprData->NumericLiteral == NULL)
+    {
+      printf("Memory allocation failed when parsing increment expression.\n");
+      exit(EXIT_FAILURE);
+    }
+
+    Stat *iden = malloc(sizeof(Stat));
+    if (iden == NULL)
+    {
+      printf("Memory allocation failed when parsing increment expression.\n");
+      exit(EXIT_FAILURE);
+    }
+
+    iden->kind = Kind_Identifier;
+    iden->data = (StatData *)malloc(sizeof(StatData));
+    if (iden->data == NULL)
+    {
+      printf("Memory allocation failed when parsing increment expression.\n");
+      exit(EXIT_FAILURE);
+    }
+    iden->data->ExprData = (ExprData *)malloc(sizeof(ExprData));
+    if (iden->data->ExprData == NULL)
+    {
+      printf("Memory allocation failed when parsing increment expression.\n");
+      exit(EXIT_FAILURE);
+    }
+    iden->data->ExprData->Identifier = (Identifier *)malloc(sizeof(Identifier));
+    if (iden->data->ExprData->Identifier == NULL)
+    {
+      printf("Memory allocation failed when parsing increment expression.\n");
+      exit(EXIT_FAILURE);
+    }
+
+    iden->data->ExprData->NumericLiteral->value = 1;
+    iden->data->ExprData->Identifier->symbol = left->data->ExprData->Identifier->symbol;
+
+    Stat *inc = malloc(sizeof(Stat));
+    if (inc == NULL)
+    {
+      printf("Memory allocation failed when parsing increment expression.\n");
+      exit(EXIT_FAILURE);
+    }
+
+    inc->kind = Kind_BinaryExpr;
+    inc->data = (StatData *)malloc(sizeof(StatData));
+    if (inc->data == NULL)
+    {
+      printf("Memory allocation failed when parsing increment expression.\n");
+      exit(EXIT_FAILURE);
+    }
+    inc->data->ExprData = (ExprData *)malloc(sizeof(ExprData));
+    if (inc->data->ExprData == NULL)
+    {
+      printf("Memory allocation failed when parsing increment expression.\n");
+      exit(EXIT_FAILURE);
+    }
+    inc->data->ExprData->BinaryExpr = (BinaryExpr *)malloc(sizeof(BinaryExpr));
+    if (inc->data->ExprData->BinaryExpr == NULL)
+    {
+      printf("Memory allocation failed when parsing increment expression.\n");
+      exit(EXIT_FAILURE);
+    }
+    inc->data->ExprData->BinaryExpr->binaryOperator = "+";
+    inc->data->ExprData->BinaryExpr->left = iden;
+    inc->data->ExprData->BinaryExpr->right = numLit;
+
+    Stat *assign = malloc(sizeof(Stat));
+    if (assign == NULL)
+    {
+      printf("Memory allocation failed when parsing increment expression.\n");
+      exit(EXIT_FAILURE);
+    }
+
+    assign->kind = Kind_AssignmentExpr;
+    assign->data = (StatData *)malloc(sizeof(StatData));
+    if (assign->data == NULL)
+    {
+      printf("Memory allocation failed when parsing increment expression.\n");
+      exit(EXIT_FAILURE);
+    }
+    assign->data->ExprData = (ExprData *)malloc(sizeof(ExprData));
+    if (assign->data->ExprData == NULL)
+    {
+      printf("Memory allocation failed when parsing increment expression.\n");
+      exit(EXIT_FAILURE);
+    }
+    assign->data->ExprData->AssignmentExpr = (AssignmentExpr *)malloc(sizeof(AssignmentExpr));
+    if (assign->data->ExprData->AssignmentExpr == NULL)
+    {
+      printf("Memory allocation failed when parsing increment expression.\n");
+      exit(EXIT_FAILURE);
+    }
+
+    assign->data->ExprData->AssignmentExpr->assignee = left;
+    assign->data->ExprData->AssignmentExpr->value = inc;
+
+    return assign;
+  }
+  else if (tk[*index].type == Inc)
+  {
+    eat(tk, index);
+
+    Stat *numLit = malloc(sizeof(Stat));
+    if (numLit == NULL)
+    {
+      printf("Memory allocation failed when parsing decrement expression.\n");
+      exit(EXIT_FAILURE);
+    }
+
+    numLit->kind = Kind_NumericLiteral;
+    numLit->data = (StatData *)malloc(sizeof(StatData));
+    if (numLit->data == NULL)
+    {
+      printf("Memory allocation failed when parsing decrement expression.\n");
+      exit(EXIT_FAILURE);
+    }
+    numLit->data->ExprData = (ExprData *)malloc(sizeof(ExprData));
+    if (numLit->data->ExprData == NULL)
+    {
+      printf("Memory allocation failed when parsing decrement expression.\n");
+      exit(EXIT_FAILURE);
+    }
+    numLit->data->ExprData->NumericLiteral = (NumericLiteral *)malloc(sizeof(NumericLiteral));
+    if (numLit->data->ExprData->NumericLiteral == NULL)
+    {
+      printf("Memory allocation failed when parsing decrement expression.\n");
+      exit(EXIT_FAILURE);
+    }
+
+    Stat *iden = malloc(sizeof(Stat));
+    if (iden == NULL)
+    {
+      printf("Memory allocation failed when parsing decrement expression.\n");
+      exit(EXIT_FAILURE);
+    }
+
+    iden->kind = Kind_Identifier;
+    iden->data = (StatData *)malloc(sizeof(StatData));
+    if (iden->data == NULL)
+    {
+      printf("Memory allocation failed when parsing decrement expression.\n");
+      exit(EXIT_FAILURE);
+    }
+    iden->data->ExprData = (ExprData *)malloc(sizeof(ExprData));
+    if (iden->data->ExprData == NULL)
+    {
+      printf("Memory allocation failed when parsing decrement expression.\n");
+      exit(EXIT_FAILURE);
+    }
+    iden->data->ExprData->Identifier = (Identifier *)malloc(sizeof(Identifier));
+    if (iden->data->ExprData->Identifier == NULL)
+    {
+      printf("Memory allocation failed when parsing decrement expression.\n");
+      exit(EXIT_FAILURE);
+    }
+
+    iden->data->ExprData->NumericLiteral->value = 1;
+    iden->data->ExprData->Identifier->symbol = left->data->ExprData->Identifier->symbol;
+
+    Stat *dec = malloc(sizeof(Stat));
+    if (dec == NULL)
+    {
+      printf("Memory allocation failed when parsing decrement expression.\n");
+      exit(EXIT_FAILURE);
+    }
+
+    dec->kind = Kind_BinaryExpr;
+    dec->data = (StatData *)malloc(sizeof(StatData));
+    if (dec->data == NULL)
+    {
+      printf("Memory allocation failed when parsing decrement expression.\n");
+      exit(EXIT_FAILURE);
+    }
+    dec->data->ExprData = (ExprData *)malloc(sizeof(ExprData));
+    if (dec->data->ExprData == NULL)
+    {
+      printf("Memory allocation failed when parsing decrement expression.\n");
+      exit(EXIT_FAILURE);
+    }
+    dec->data->ExprData->BinaryExpr = (BinaryExpr *)malloc(sizeof(BinaryExpr));
+    if (dec->data->ExprData->BinaryExpr == NULL)
+    {
+      printf("Memory allocation failed when parsing decrement expression.\n");
+      exit(EXIT_FAILURE);
+    }
+    dec->data->ExprData->BinaryExpr->binaryOperator = "-";
+    dec->data->ExprData->BinaryExpr->left = iden;
+    dec->data->ExprData->BinaryExpr->right = numLit;
+
+    Stat *assign = malloc(sizeof(Stat));
+    if (assign == NULL)
+    {
+      printf("Memory allocation failed when parsing decrement expression.\n");
+      exit(EXIT_FAILURE);
+    }
+
+    assign->kind = Kind_AssignmentExpr;
+    assign->data = (StatData *)malloc(sizeof(StatData));
+    if (assign->data == NULL)
+    {
+      printf("Memory allocation failed when parsing decrement expression.\n");
+      exit(EXIT_FAILURE);
+    }
+    assign->data->ExprData = (ExprData *)malloc(sizeof(ExprData));
+    if (assign->data->ExprData == NULL)
+    {
+      printf("Memory allocation failed when parsing decrement expression.\n");
+      exit(EXIT_FAILURE);
+    }
+    assign->data->ExprData->AssignmentExpr = (AssignmentExpr *)malloc(sizeof(AssignmentExpr));
+    if (assign->data->ExprData->AssignmentExpr == NULL)
+    {
+      printf("Memory allocation failed when parsing decrement expression.\n");
+      exit(EXIT_FAILURE);
+    }
+
+    assign->data->ExprData->AssignmentExpr->assignee = left;
+    assign->data->ExprData->AssignmentExpr->value = dec;
+
+    return assign;
+  }
   return left;
 }
 

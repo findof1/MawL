@@ -149,8 +149,8 @@ struct ForStatement
 
 struct AssignmentExpr
 {
-  Stat assignee;
-  Stat value;
+  Stat *assignee;
+  Stat *value;
 };
 
 struct BinaryExpr
